@@ -214,7 +214,7 @@ def get_project_and_vcf_fasta_mapping_from_metadata_xlsx(metadata_xlsx, mapping_
             if file_name:
                 file_name = os.path.abspath(file_name)
             analysis_alias = row[files_headers['Analysis Alias']]
-            reference_fasta = analysis_alias_dict[analysis_alias]
+            reference_fasta = analysis_alias_dict.get(analysis_alias)
             if reference_fasta:
                 reference_fasta = os.path.abspath(reference_fasta)
             if file_name and reference_fasta:

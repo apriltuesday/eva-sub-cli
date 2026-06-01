@@ -33,6 +33,10 @@ HOLD_DATE_KEY = 'holdDate'
 # Samples created before this date are not required to have collection date or geographic location
 threshold_2023 = datetime(2023, 1, 1)
 
+# Field names for collection date and geographic location accepted by ENA
+# TODO confirm list with ENA
+collection_date_field_names = ['collection_date', 'collection date']
+geo_location_field_names = ['geographic location (country and/or sea)', 'geo_loc_name', 'geo loc name']
 
 def cast_list(l, type_to_cast=str):
     for e in l:
@@ -242,13 +246,16 @@ class SemanticMetadataChecker(AppLogger):
     def _should_bypass_error(self, sample_data, error):
         try:
             try:
-                created_dated = datetime.strptime(sample_data['create'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                created_date = datetime.strptime(sample_data['create'], '%Y-%m-%dT%H:%M:%S.%fZ')
             except ValueError:
-                created_dated = datetime.strptime(sample_data['create'], '%Y-%m-%dT%H:%M:%SZ')
-            if created_dated < threshold_2023 and (
+                created_date = datetime.strptime(sample_data['create'], '%Y-%m-%dT%H:%M:%SZ')
+            if created_date < threshold_2023 and (
                     'collection date' in error or
                     'geographic location (country and/or sea)' in error
             ):
+                return True
+            # TODO check for alternate properties - refactor + combine with below method
+            if ('collection date' in error and ...) or ('geographic location (country and/or sea)' in error and ...):
                 return True
         except Exception:
             pass
@@ -259,14 +266,14 @@ class SemanticMetadataChecker(AppLogger):
         if self._should_bypass_error(sample_data, 'collection date'):
             return
         found_collection_date = False
-        for key in ['collection_date', 'collection date']:
+        for key in collection_date_field_names:
             if key in sample_data['characteristics'] and check_date(sample_data['characteristics'][key][0]['text']):
                 found_collection_date = True
         if not found_collection_date:
             self.add_error(json_path, f'Existing sample {accession} does not have a valid collection date')
 
         found_geo_loc = False
-        for key in ['geographic location (country and/or sea)', 'geo loc name']:
+        for key in geo_location_field_names:
             if key in sample_data['characteristics'] and sample_data['characteristics'][key][0]['text']:
                 found_geo_loc = True
         if not found_geo_loc:
